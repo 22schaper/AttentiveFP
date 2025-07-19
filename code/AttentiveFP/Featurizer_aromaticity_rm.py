@@ -67,7 +67,7 @@ def atom_features(atom,
                 results = results + [False, False
                                      ] + [atom.HasProp('_ChiralityPossible')]
 
-        return np.array(results)
+        return np.array(results, dtype=np.float32)
 
 
 def bond_features(bond, use_chirality=True):
@@ -82,7 +82,7 @@ def bond_features(bond, use_chirality=True):
         bond_feats = bond_feats + one_of_k_encoding_unk(
             str(bond.GetStereo()),
             ["STEREONONE", "STEREOANY", "STEREOZ", "STEREOE"])
-    return np.zeros(shape=np.array(bond_feats).shape) # set all bond features blank
+    return np.zeros(shape=np.array(bond_feats).shape, dtype=np.float32) # set all bond features blank
 
 
 def num_atom_features():

@@ -225,16 +225,16 @@ def get_smiles_dicts(smilesList):
     degrees = [0,1,2,3,4,5]
     #then run through our numpy array again
     for smiles,arrayrep in smiles_to_fingerprint_features.items():
-        mask = np.zeros((max_atom_len))
+        mask = np.zeros((max_atom_len), dtype=np.float32)
 
         #get the basic info of what
         #    my atoms and bonds are initialized
-        atoms = np.zeros((max_atom_len,num_atom_features))
-        bonds = np.zeros((max_bond_len,num_bond_features))
+        atoms = np.zeros((max_atom_len,num_atom_features), dtype=np.float32)
+        bonds = np.zeros((max_bond_len,num_bond_features), dtype=np.float32)
 
         #then get the arrays initlialized for the neighbors
-        atom_neighbors = np.zeros((max_atom_len,len(degrees)))
-        bond_neighbors = np.zeros((max_atom_len,len(degrees)))
+        atom_neighbors = np.zeros((max_atom_len,len(degrees)), dtype=np.float32)
+        bond_neighbors = np.zeros((max_atom_len,len(degrees)), dtype=np.float32)
 
         #now set these all to the last element of the list, which is zero padded
         atom_neighbors.fill(max_atom_index_num)
@@ -336,16 +336,16 @@ def save_smiles_dicts(smilesList,filename):
     degrees = [0,1,2,3,4,5]
     #then run through our numpy array again
     for smiles,arrayrep in smiles_to_fingerprint_features.items():
-        mask = np.zeros((max_atom_len))
+        mask = np.zeros((max_atom_len), dtype=np.float32)
 
         #get the basic info of what
         #    my atoms and bonds are initialized
-        atoms = np.zeros((max_atom_len,num_atom_features))
-        bonds = np.zeros((max_bond_len,num_bond_features))
+        atoms = np.zeros((max_atom_len,num_atom_features), dtype=np.float32)
+        bonds = np.zeros((max_bond_len,num_bond_features), dtype=np.float32)
 
         #then get the arrays initlialized for the neighbors
-        atom_neighbors = np.zeros((max_atom_len,len(degrees)))
-        bond_neighbors = np.zeros((max_atom_len,len(degrees)))
+        atom_neighbors = np.zeros((max_atom_len,len(degrees)), dtype=np.float32)
+        bond_neighbors = np.zeros((max_atom_len,len(degrees)), dtype=np.float32)
 
         #now set these all to the last element of the list, which is zero padded
         atom_neighbors.fill(max_atom_index_num)

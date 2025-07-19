@@ -1,4 +1,3 @@
-
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 
@@ -226,16 +225,16 @@ def get_smiles_dicts(smilesList):
     degrees = [0,1,2,3,4,5]
     #then run through our numpy array again
     for smiles,arrayrep in smiles_to_fingerprint_features.items():
-        mask = np.zeros((max_atom_len))
+        mask = np.zeros((max_atom_len), dtype=np.float32)
 
         #get the basic info of what
         #    my atoms and bonds are initialized
-        atoms = np.zeros((max_atom_len,num_atom_features))
-        bonds = np.zeros((max_bond_len,num_bond_features))
+        atoms = np.zeros((max_atom_len,num_atom_features), dtype=np.float32)
+        bonds = np.zeros((max_bond_len,num_bond_features), dtype=np.float32)
 
         #then get the arrays initlialized for the neighbors
-        atom_neighbors = np.zeros((max_atom_len,len(degrees)))
-        bond_neighbors = np.zeros((max_atom_len,len(degrees)))
+        atom_neighbors = np.zeros((max_atom_len,len(degrees)), dtype=np.float32)
+        bond_neighbors = np.zeros((max_atom_len,len(degrees)), dtype=np.float32)
 
         #now set these all to the last element of the list, which is zero padded
         atom_neighbors.fill(max_atom_index_num)
@@ -337,16 +336,16 @@ def save_smiles_dicts(smilesList,filename):
     degrees = [0,1,2,3,4,5]
     #then run through our numpy array again
     for smiles,arrayrep in smiles_to_fingerprint_features.items():
-        mask = np.zeros((max_atom_len))
+        mask = np.zeros((max_atom_len), dtype=np.float32)
 
         #get the basic info of what
         #    my atoms and bonds are initialized
-        atoms = np.zeros((max_atom_len,num_atom_features))
-        bonds = np.zeros((max_bond_len,num_bond_features))
+        atoms = np.zeros((max_atom_len,num_atom_features), dtype=np.float32)
+        bonds = np.zeros((max_bond_len,num_bond_features), dtype=np.float32)
 
         #then get the arrays initlialized for the neighbors
-        atom_neighbors = np.zeros((max_atom_len,len(degrees)))
-        bond_neighbors = np.zeros((max_atom_len,len(degrees)))
+        atom_neighbors = np.zeros((max_atom_len,len(degrees)), dtype=np.float32)
+        bond_neighbors = np.zeros((max_atom_len,len(degrees)), dtype=np.float32)
 
         #now set these all to the last element of the list, which is zero padded
         atom_neighbors.fill(max_atom_index_num)
@@ -566,6 +565,81 @@ def moltosvg_interaction_known(mol, atom_list, atom_predictions, molecule_predic
     drawer.FinishDrawing()
     svg = drawer.GetDrawingText()
     return svg.replace('svg:','')
+
+def featurize_smiles_from_dict(smiles, feature_dicts):
+    """
+    Generates feature arrays for a single SMILES string, padded to dimensions
+    consistent with a pre-existing feature dictionary.
+    This is useful for making predictions on new molecules after a model has been trained.
+    """
+    # 1. Get dimensions from feature_dicts
+    any_smiles_key = next(iter(feature_dicts['smiles_to_atom_info']))
+    max_atom_len, num_atom_features = feature_dicts['smiles_to_atom_info'][any_smiles_key].shape
+    max_bond_len, num_bond_features = feature_dicts['smiles_to_bond_info'][any_smiles_key].shape
+    
+    # These are the indices for the padding atoms/bonds
+    max_atom_index_num = max_atom_len - 1
+    max_bond_index_num = max_bond_len - 1
+    
+    degrees = [0, 1, 2, 3, 4, 5]
+
+    # 2. Featurize the new SMILES string (unpadded)
+    molgraph = graph_from_smiles(smiles)
+    molgraph.sort_nodes_by_degree('atom')
+    arrayrep = array_rep_from_smiles(molgraph)
+
+    atom_features = arrayrep['atom_features']
+    bond_features = arrayrep['bond_features']
+
+    # Check if molecule is too large for the model's input dimensions
+    if len(atom_features) >= max_atom_len:
+        raise ValueError(f"SMILES '{smiles}' has {len(atom_features)} atoms, but the model was trained with a maximum of {max_atom_len - 1}.")
+    if len(bond_features) >= max_bond_len:
+        raise ValueError(f"SMILES '{smiles}' has {len(bond_features)} bonds, but the model was trained with a maximum of {max_bond_len - 1}.")
+
+    # 3. Pad the features
+    mask = np.zeros((max_atom_len), dtype=np.float32)
+    atoms = np.zeros((max_atom_len, num_atom_features), dtype=np.float32)
+    bonds = np.zeros((max_bond_len, num_bond_features), dtype=np.float32)
+    atom_neighbors = np.zeros((max_atom_len, len(degrees)), dtype=np.float32)
+    bond_neighbors = np.zeros((max_atom_len, len(degrees)), dtype=np.float32)
+
+    atom_neighbors.fill(max_atom_index_num)
+    bond_neighbors.fill(max_bond_index_num)
+
+    for i, feature in enumerate(atom_features):
+        mask[i] = 1.0
+        atoms[i] = feature
+    
+    for j, feature in enumerate(bond_features):
+        bonds[j] = feature
+
+    atom_neighbor_count = 0
+    for degree in degrees:
+        atom_neighbors_list = arrayrep[('atom_neighbors', degree)]
+        if len(atom_neighbors_list) > 0:
+            for i, degree_array in enumerate(atom_neighbors_list):
+                for j, value in enumerate(degree_array):
+                    atom_neighbors[atom_neighbor_count, j] = value
+                atom_neighbor_count += 1
+    
+    bond_neighbor_count = 0
+    for degree in degrees:
+        bond_neighbors_list = arrayrep[('bond_neighbors', degree)]
+        if len(bond_neighbors_list) > 0:
+            for i, degree_array in enumerate(bond_neighbors_list):
+                for j, value in enumerate(degree_array):
+                    bond_neighbors[bond_neighbor_count, j] = value
+                bond_neighbor_count += 1
+    
+    # 4. Return as numpy arrays with batch dimension of 1
+    return (
+        np.asarray([atoms]),
+        np.asarray([bonds]),
+        np.asarray([atom_neighbors]),
+        np.asarray([bond_neighbors]),
+        np.asarray([mask])
+    )
 
 
 
