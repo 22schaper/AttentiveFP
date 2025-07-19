@@ -50,7 +50,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import torch.utils.data as Data
 
 torch.manual_seed(8) # for reproduction
 
@@ -81,52 +80,31 @@ torch.set_default_dtype(torch.float32)
 torch.nn.Module.dump_patches = True
 
 pretty_print(f"Using device: {out_device}", pb=True, pa=True)
+os.makedirs(f'{MAIN_FOLDER}', exist_ok=True)
 
 
 # +
 import time
 import numpy as np
-import gc
 import sys
 sys.setrecursionlimit(50000)
 
 import pickle
-import json
-import csv
 import shutil
-import copy
 import pandas as pd
+from rdkit import Chem
 
-# import AttentiveFP own modules
-from AttentiveFP import Fingerprint, Fingerprint_viz, save_smiles_dicts, get_smiles_dicts, get_smiles_array, moltosvg_highlight, featurize_smiles_from_dict
+# import AttentiveFP modules
+from AttentiveFP import Fingerprint, save_smiles_dicts, get_smiles_array, featurize_smiles_from_dict
 # -
 
 
 from sklearn.metrics import roc_auc_score
-from sklearn.metrics import matthews_corrcoef
 from sklearn.metrics import recall_score
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import r2_score
-from sklearn.metrics import mean_squared_error
-from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import precision_score
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import auc
-from sklearn.metrics import f1_score
 
-
-# +
-from rdkit import Chem
-from rdkit.Chem import QED
-from numpy.polynomial.polynomial import polyfit
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import matplotlib
-import mplfinance as mpf
-from IPython.display import SVG, display
-import seaborn as sns; sns.set(color_codes=True)
-
-os.makedirs(f'{MAIN_FOLDER}', exist_ok=True)
 
 # +
 task_name = 'BBBP'
@@ -249,7 +227,6 @@ def create_model():
             pretty_print(f"{name} {param.data.shape}")
     
     return model, optimizer, loss_function
-
 
 
 # +
@@ -605,5 +582,4 @@ if os.path.exists(f"{folder_eval}/results.csv") and os.path.getsize(f"{folder_ev
 else:
     pretty_print("No results file found or file is empty. Skipping statistics generation.", pb=True, pa=True)
 # -
-
 
