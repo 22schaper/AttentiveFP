@@ -16,7 +16,7 @@
 # +
 # helper functions and global settings
 
-FORCE_CPU = True       # use CPU instead of GPU
+FORCE_CPU = True        # use CPU instead of GPU
 RECREATE_SETS = True    # use existing sets for training, validation and testing
 TRAIN_MODELS = False    # conduct training
 SAVE_MODELS = False     # save model at the end of epoch
@@ -229,7 +229,8 @@ def create_sets(n=0):
     return valid_df, train_df, test_df
 
 
-# +
+# -
+
 def create_model():
     x_atom, x_bonds, x_atom_index, x_bond_index, x_mask, smiles_to_rdkit_list = get_smiles_array([smilesList[0]],feature_dicts)
     num_atom_features = x_atom.shape[-1]
@@ -600,35 +601,6 @@ if os.path.exists(f"{folder_eval}/results.csv") and os.path.getsize(f"{folder_ev
 
     pretty_print(f"Loaded {len(df)} rows from 'results.csv'", pb=True)
     pretty_print(f"Saved aggregated stats with {len(stats)} smiles to 'results_stats.csv'", pa=True)
-
-    # error bar plot
-    fig, ax = plt.subplots(figsize=(10,6))
-    x = np.arange(len(stats))
-    ax.errorbar(x - 0.1, stats['p0_mean'], yerr=stats['p0_std'], fmt='o', label='Class 0')
-    ax.errorbar(x + 0.1, stats['p1_mean'], yerr=stats['p1_std'], fmt='o', label='Class 1')
-    ax.set_xticks(x)
-    ax.set_xticklabels(stats.index, rotation=45, ha='right')
-    ax.set_ylabel('Probability')
-    ax.set_title('Mean ± STD of Class Probabilities per SMILE')
-    ax.legend()
-    fig.tight_layout()
-    fig.savefig(f"{folder_eval}/prob_errorbars.png", dpi=150)
-    plt.close(fig)
-    pretty_print(f"Saved error bar plot to {folder_eval}/prob_errorbars.png", pb=True, pa=True)
-
-    # candlestick-style plot
-    # helper function to create OHLC frame for a given class
-    def get_ohlc(df, prob_col):
-        # The data is already indexed by 'smile' and 'run', so group by 'smile' (level=0)
-        # and then for each group, calculate ohlc.
-        # iloc[0] and iloc[-1] depend on the order of runs. Let's assume they are stored sequentially.
-        ohlc = df.groupby(level='smile')[prob_col].agg(
-            open='first',
-            high='max',
-            low='min',
-            close='last'
-        )
-        return ohlc
 
 else:
     pretty_print("No results file found or file is empty. Skipping statistics generation.", pb=True, pa=True)
