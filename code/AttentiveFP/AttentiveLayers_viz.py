@@ -61,27 +61,21 @@ class Fingerprint_viz(nn.Module):
         feature_attention = torch.cat([atom_feature_expand, neighbor_feature],dim=-1)
         
         align_score = self.dropout(F.leaky_relu(self.align[0](feature_attention)))
-#             print(align_score)
         align_score = align_score + softmax_mask
         attention_weight = F.softmax(align_score,-2)
-#             print(align_score)
         attention_weight = attention_weight * attend_mask
-#         print(align_score)
         atom_attention_weight_viz = []
         atom_attention_weight_viz.append(attention_weight)
 
         neighbor_feature_transform = self.attend[0](self.dropout(neighbor_feature))
-#             print(features_neighbor_transform.shape)
         context = torch.sum(torch.mul(attention_weight,neighbor_feature_transform),-2)
-#             print(context.shape)
         context = F.elu(context)
         context_reshape = context.view(batch_size*mol_length, fingerprint_dim)
         atom_feature_reshape = atom_feature.view(batch_size*mol_length, fingerprint_dim)
         atom_feature_reshape = self.GRUCell[0](context_reshape, atom_feature_reshape)
         atom_feature = atom_feature_reshape.view(batch_size, mol_length, fingerprint_dim)
-#         atom_feature_viz.append(atom_feature)
 
-        #do nonlinearity
+        #do non-linearity
         activated_features = F.relu(atom_feature)
         atom_feature_viz.append(activated_features)
         
@@ -96,25 +90,20 @@ class Fingerprint_viz(nn.Module):
             feature_attention = torch.cat([atom_feature_expand, neighbor_feature],dim=-1)
 
             align_score = self.dropout(F.leaky_relu(self.align[d+1](feature_attention)))
-    #             print(align_score)
             align_score = align_score + softmax_mask
             attention_weight = F.softmax(align_score,-2)
-#             print(align_score)
             attention_weight = attention_weight * attend_mask
             atom_attention_weight_viz.append(attention_weight)
     
-#             print(align_score)
             neighbor_feature_transform = self.attend[d+1](self.dropout(neighbor_feature))
-    #             print(features_neighbor_transform.shape)
             context = torch.sum(torch.mul(attention_weight,neighbor_feature_transform),-2)
-    #             print(context.shape)
             context = F.elu(context)
             context_reshape = context.view(batch_size*mol_length, fingerprint_dim)
             atom_feature_reshape = self.GRUCell[d+1](context_reshape, atom_feature_reshape)
             atom_feature = atom_feature_reshape.view(batch_size, mol_length, fingerprint_dim)
 #             atom_feature_viz.append(atom_feature)
             
-            #do nonlinearity
+            #do non-linearity
             activated_features = F.relu(atom_feature)
             atom_feature_viz.append(activated_features)
 
@@ -124,7 +113,7 @@ class Fingerprint_viz(nn.Module):
         mol_feature_unbounded_viz.append(torch.sum(atom_feature * atom_mask, dim=-2)) 
         
         mol_feature = torch.sum(activated_features * atom_mask, dim=-2)
-        #do nonlinearity
+        #do non-linearity
         activated_features_mol = F.relu(mol_feature)
         
         # when the descriptor value has lower or upper bounds
@@ -145,18 +134,15 @@ class Fingerprint_viz(nn.Module):
             mol_align_score = mol_align_score + mol_softmax_mask
             mol_attention_weight = F.softmax(mol_align_score,-2)
             mol_attention_weight = mol_attention_weight * atom_mask
-#             print(mol_attention_weight.shape,mol_attention_weight)
             mol_attention_weight_viz.append(mol_attention_weight)
 
             activated_features_transform = self.mol_attend(self.dropout(activated_features))
             mol_context = torch.sum(torch.mul(mol_attention_weight,activated_features_transform),-2)
-#             print(mol_context.shape,mol_context)
             mol_context = F.elu(mol_context)
             mol_feature = self.mol_GRUCell(mol_context, mol_feature)
-#             print(mol_feature.shape,mol_feature)
 
             mol_feature_unbounded_viz.append(mol_feature)
-            #do nonlinearity
+            #do non-linearity
             activated_features_mol = F.relu(mol_feature)           
             mol_feature_viz.append(activated_features_mol)
             
